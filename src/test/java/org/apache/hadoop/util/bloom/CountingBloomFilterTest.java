@@ -31,12 +31,14 @@ public class CountingBloomFilterTest {
     public void testDoesNotUseMoreThanOneGigabyteOfMemory() {
         assertTrue(LARGE_VECTOR_SIZE > 0);
 
-        final int numberOfQwords = CountingBloomFilter.buckets2words(LARGE_VECTOR_SIZE);
+        final int expectedMemorySize = LARGE_VECTOR_SIZE / 8 /* bits per byte */ * 4 /* bits per counter */;
         final int bytesPerQword = 8;
+        final int numberOfQwords = CountingBloomFilter.buckets2words(LARGE_VECTOR_SIZE);
         final int bytesForCBF = bytesPerQword * numberOfQwords;
 
         System.out.println("bytes = " + bytesForCBF);
         System.out.println("items = " + LARGE_VECTOR_SIZE);
+        assertEquals(expectedMemorySize, bytesForCBF);
         assertTrue(bytesForCBF < /* 1 GiB */ (1048576L * 1024));
     }
 
