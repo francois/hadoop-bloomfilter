@@ -3,9 +3,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.apache.hadoop</groupId>
-  <artifactId>hadoop-countingbloomfilter</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
-  <name>hadoop-countingbloomfilter</name>
+  <artifactId>hadoop-bloomfilter</artifactId>
+  <version>1.0.0</version>
+  <name>hadoop-bloomfilter</name>
 
   <dependencies>
     <!-- Test -->
