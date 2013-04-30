@@ -87,8 +87,11 @@ public final class CountingBloomFilter extends Filter {
     buckets = new long[buckets2words(vectorSize)];
   }
 
-  /** returns the number of 64 bit words it would take to hold vectorSize buckets */
-  private static int buckets2words(int vectorSize) {
+  /** returns the number of 64 bit words it would take to hold vectorSize buckets
+   * @param vectorSize total number of buckets.
+   * @return the number of 64 bit words it would take to hold vectorSize buckets.
+   */
+  static int buckets2words(int vectorSize) {
    return ((vectorSize - 1) >>> 4) + 1;
   }
 
