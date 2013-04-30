@@ -20,7 +20,6 @@ package org.apache.hadoop.util.hash;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
-import org.apache.hadoop.conf.Configuration;
 
 /**
  * This class represents a common API for hashing functions.
@@ -53,17 +52,6 @@ public abstract class Hash {
   }
 
   /**
-   * This utility method converts the name of the configured
-   * hash type to a symbolic constant.
-   * @param conf configuration
-   * @return one of the predefined constants
-   */
-  public static int getHashType(Configuration conf) {
-    String name = conf.get("hadoop.util.hash.type", "murmur");
-    return parseHashType(name);
-  }
-
-  /**
    * Get a singleton instance of hash function of a given type.
    * @param type predefined hash type
    * @return hash function instance, or null if type is invalid
@@ -77,17 +65,6 @@ public abstract class Hash {
     default:
       return null;
     }
-  }
-
-  /**
-   * Get a singleton instance of hash function of a type
-   * defined in the configuration.
-   * @param conf current configuration
-   * @return defined hash type, or null if type is invalid
-   */
-  public static Hash getInstance(Configuration conf) {
-    int type = getHashType(conf);
-    return getInstance(type);
   }
 
   /**
