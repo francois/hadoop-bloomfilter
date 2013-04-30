@@ -49,10 +49,6 @@
 
 package org.apache.hadoop.util.bloom;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 /**
  * Implements a <i>counting Bloom filter</i>, as defined by Fan et al. in a ToN
  * 2000 paper.
@@ -280,26 +276,5 @@ public final class CountingBloomFilter extends Filter {
     }
 
     return res.toString();
-  }
-
-  // Writable
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    super.write(out);
-    int sizeInWords = buckets2words(vectorSize);
-    for(int i = 0; i < sizeInWords; i++) {
-      out.writeLong(buckets[i]);
-    }
-  }
-
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    super.readFields(in);
-    int sizeInWords = buckets2words(vectorSize);
-    buckets = new long[sizeInWords];
-    for(int i = 0; i < sizeInWords; i++) {
-      buckets[i] = in.readLong();
-    }
   }
 }
