@@ -52,18 +52,12 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
-import org.apache.hadoop.io.WritableComparable;
-
 /**
  * The general behavior of a key that must be stored in a filter.
  *
  * @see Filter The general behavior of a filter
  */
-@InterfaceAudience.LimitedPrivate({"HDFS", "MapReduce"})
-@InterfaceStability.Unstable
-public class Key implements WritableComparable<Key> {
+public class Key implements Comparable<Key> {
   /** Byte value of key */
   byte[] bytes;
 
@@ -150,20 +144,6 @@ public class Key implements WritableComparable<Key> {
     }
     result ^= Double.valueOf(weight).hashCode();
     return result;
-  }
-
-  // Writable
-
-  public void write(DataOutput out) throws IOException {
-    out.writeInt(bytes.length);
-    out.write(bytes);
-    out.writeDouble(weight);
-  }
-
-  public void readFields(DataInput in) throws IOException {
-    this.bytes = new byte[in.readInt()];
-    in.readFully(this.bytes);
-    weight = in.readDouble();
   }
 
   // Comparable

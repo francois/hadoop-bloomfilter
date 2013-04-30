@@ -56,9 +56,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.hash.Hash;
 
 /**
@@ -75,9 +72,7 @@ import org.apache.hadoop.util.hash.Hash;
  * @see Key The general behavior of a key
  * @see HashFunction A hash function
  */
-@InterfaceAudience.LimitedPrivate({"HDFS", "MapReduce"})
-@InterfaceStability.Unstable
-public abstract class Filter implements Writable {
+public abstract class Filter {
   private static final int VERSION = -1; // negative to accommodate for old format
   /** The vector size of <i>this</i> filter. */
   protected int vectorSize;

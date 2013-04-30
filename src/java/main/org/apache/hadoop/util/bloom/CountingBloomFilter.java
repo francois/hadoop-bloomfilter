@@ -53,9 +53,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.hadoop.classification.InterfaceStability;
-
 /**
  * Implements a <i>counting Bloom filter</i>, as defined by Fan et al. in a ToN
  * 2000 paper.
@@ -71,8 +68,6 @@ import org.apache.hadoop.classification.InterfaceStability;
  *
  * @see <a href="http://portal.acm.org/citation.cfm?id=343571.343572">Summary cache: a scalable wide-area web cache sharing protocol</a>
  */
-@InterfaceAudience.Public
-@InterfaceStability.Stable
 public final class CountingBloomFilter extends Filter {
   /** Storage for the counting buckets */
   private long[] buckets;
