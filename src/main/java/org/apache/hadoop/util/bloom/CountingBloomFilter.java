@@ -64,12 +64,12 @@ package org.apache.hadoop.util.bloom;
  *
  * @see <a href="http://portal.acm.org/citation.cfm?id=343571.343572">Summary cache: a scalable wide-area web cache sharing protocol</a>
  */
-public final class CountingBloomFilter extends Filter {
+public class CountingBloomFilter extends Filter {
   /** Storage for the counting buckets */
-  private long[] buckets;
+  protected long[] buckets;
 
   /** We are using 4bit buckets, so each bucket can count to 15 */
-  private final static long BUCKET_MAX_VALUE = 15;
+  protected final static long BUCKET_MAX_VALUE = 15;
 
   /**
    * Constructor
@@ -101,6 +101,10 @@ public final class CountingBloomFilter extends Filter {
     int[] h = hash.hash(key);
     hash.clear();
 
+    inc(h);
+  }
+
+  protected void inc(int[] h) {
     for(int i = 0; i < nbHash; i++) {
       // find the bucket
       int wordNum = h[i] >> 4;          // div 16
@@ -117,7 +121,7 @@ public final class CountingBloomFilter extends Filter {
     }
   }
 
-  /**
+    /**
    * Removes a specified key from <i>this</i> counting Bloom filter.
    * <p>
    * <b>Invariant</b>: nothing happens if the specified key does not belong to <i>this</i> counter Bloom filter.

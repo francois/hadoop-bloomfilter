@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2005, European Commission project OneLab under contract 034819 (http://www.one-lab.org)
+ * Copyright (c) 2013, François Beausoleil francois@teksol.info
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or
  * without modification, are permitted provided that the following
@@ -52,68 +52,66 @@ package org.apache.hadoop.util.bloom;
 import java.util.Random;
 
 /**
- * Implements a <i>counting Bloom filter</i>, as defined by Fan et al. in a ToN
+ * Implements a <i>stable Bloom filter</i>, as defined by Fan et al. in a ToN
  * 2000 paper.
- * <p>
- * A counting Bloom filter is an improvement to standard a Bloom filter as it
- * allows dynamic additions and deletions of set membership information.  This
- * is achieved through the use of a counting vector instead of a bit vector.
- * <p>
- * Originally created by
- * <a href="http://www.one-lab.org">European Commission One-Lab Project 034819</a>.
+ * <p/>
+ * A stable Bloom filter is an improvement over a counting Bloom filter as it
+ * allows old elements to expire.
+ * <p/>
  *
  * @see Filter The general behavior of a filter
+ * @see <a href="http://webdocs.cs.ualberta.ca/~drafiei/papers/DupDet06Sigmod.pdf">Approximately Detecting Duplicates for Streaming Data using Stable Bloom Filters</a>
  *
- * @see <a href="http://portal.acm.org/citation.cfm?id=343571.343572">Summary cache: a scalable wide-area web cache sharing protocol</a>
+ * @author François Beausoleil <francois@teksol.info>
  */
-public final class StableBloomFilter extends Filter {
-  /** Storage for the counting buckets */
-  private long[] buckets;
+public class StableBloomFilter extends CountingBloomFilter {
+    /**
+     * The random number generator to use for decrementing P buckets
+     */
+    private final Random random;
 
-  /** The random number generator to use for decrementing P buckets */
-  private final Random random;
+    /**
+     * The number of buckets in our filter
+     */
+    private final int numBuckets;
 
-  /** The number of buckets in our filter */
-  private final int numBuckets;
+    /**
+     * The number of decrement operations we do on each add
+     */
+    private final int p;
 
-  /** The number of decrement operations we do on each add */
-  private final int p;
-
-  /**
-   * Constructor
-   * @param vectorSize The vector size of <i>this</i> filter.
-   * @param nbHash The number of hash function to consider.
-   * @param hashType type of the hashing function (see
-   * {@link org.apache.hadoop.util.hash.Hash}).
-   */
-  public StableBloomFilter(int vectorSize, int nbHash, int hashType) {
-    this(vectorSize, nbHash, hashType, new Random());
-  }
-
-  /**
-   * Constructor
-   * @param vectorSize The vector size of <i>this</i> filter.
-   * @param nbHash The number of hash function to consider.
-   * @param hashType type of the hashing function (see
-   * @param random a random number generator for decrementing P buckets.
-   * {@link org.apache.hadoop.util.hash.Hash}).
-   */
-  public StableBloomFilter(int vectorSize, int nbHash, int hashType, Random random) {
-    super(vectorSize, nbHash, hashType);
-    this.random = random;
-    this.p = 2 * nbHash;
-    numBuckets = 8 * CountingBloomFilter.buckets2words(vectorSize); /* 8 nibbles per long */
-    buckets = new long[numBuckets / 8];
-  }
-
-  @Override
-  public void add(Key key) {
-    if(key == null) {
-      throw new NullPointerException("key can not be null");
+    /**
+     * Constructor
+     *
+     * @param vectorSize The vector size of <i>this</i> filter.
+     * @param nbHash     The number of hash function to consider.
+     * @param hashType   type of the hashing function (see
+     *                   {@link org.apache.hadoop.util.hash.Hash}).
+     */
+    public StableBloomFilter(int vectorSize, int nbHash, int hashType) {
+        this(vectorSize, nbHash, hashType, new Random());
     }
 
+    /**
+     * Constructor
+     *
+     * @param vectorSize The vector size of <i>this</i> filter.
+     * @param nbHash     The number of hash function to consider.
+     * @param hashType   type of the hashing function (see
+     * @param random     a random number generator for decrementing P buckets.
+     *                   {@link org.apache.hadoop.util.hash.Hash}).
+     */
+    public StableBloomFilter(int vectorSize, int nbHash, int hashType, Random random) {
+        super(vectorSize, nbHash, hashType);
+        this.random = random;
+        this.p = 2 * nbHash;
+        numBuckets = 8 * CountingBloomFilter.buckets2words(vectorSize); /* 8 nibbles per long */
+    }
+
+  @Override
+  protected void inc(int[] h) {
     int n = random.nextInt(numBuckets);
-    for(int i = 0; i < p; i++) {
+    for (int i = 0; i < p; i++) {
       int wordNum = n >> 4;          // div 16
       int bucketShift = (n & 0x0f) << 2;  // (mod 16) * 4
 
@@ -126,115 +124,22 @@ public final class StableBloomFilter extends Filter {
         long existingValue = buckets[wordNum] & bitsToKeepMask;
         buckets[wordNum] = existingValue | newValue;
         bucketMask += 1;
-     }
+      }
 
       // as in the paper, only do one random operation per add
       n -= 1;
       if (n < 0) n = numBuckets;
     }
 
-    int[] h = hash.hash(key);
-    hash.clear();
+    for (int i = 0; i < nbHash; i++) {
+        // find the bucket
+        int wordNum = h[i] >> 4;          // div 16
+        int bucketShift = (h[i] & 0x0f) << 2;  // (mod 16) * 4
 
-    for(int i = 0; i < nbHash; i++) {
-      // find the bucket
-      int wordNum = h[i] >> 4;          // div 16
-      int bucketShift = (h[i] & 0x0f) << 2;  // (mod 16) * 4
+        long bucketMask = 15L << bucketShift;
 
-      long bucketMask = 15L << bucketShift;
-
-      // set to max
-      buckets[wordNum] = (buckets[wordNum] | bucketMask);
+        // set to max
+        buckets[wordNum] = (buckets[wordNum] | bucketMask);
     }
-  }
-
-  @Override
-  public void and(Filter filter) {
-    if(filter == null
-        || !(filter instanceof StableBloomFilter)
-        || filter.vectorSize != this.vectorSize
-        || filter.nbHash != this.nbHash) {
-      throw new IllegalArgumentException("filters cannot be and-ed");
-    }
-    StableBloomFilter cbf = (StableBloomFilter)filter;
-
-      int sizeInWords = CountingBloomFilter.buckets2words(vectorSize);
-    for(int i = 0; i < sizeInWords; i++) {
-      this.buckets[i] &= cbf.buckets[i];
-    }
-  }
-
-  @Override
-  public boolean membershipTest(Key key) {
-    if(key == null) {
-      throw new NullPointerException("Key may not be null");
-    }
-
-    int[] h = hash.hash(key);
-    hash.clear();
-
-    for(int i = 0; i < nbHash; i++) {
-      // find the bucket
-      int wordNum = h[i] >> 4;          // div 16
-      int bucketShift = (h[i] & 0x0f) << 2;  // (mod 16) * 4
-
-      long bucketMask = 15L << bucketShift;
-
-      if((buckets[wordNum] & bucketMask) == 0) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  @Override
-  public void not() {
-    throw new UnsupportedOperationException("not() is undefined for "
-        + this.getClass().getName());
-  }
-
-  @Override
-  public void or(Filter filter) {
-    if(filter == null
-        || !(filter instanceof StableBloomFilter)
-        || filter.vectorSize != this.vectorSize
-        || filter.nbHash != this.nbHash) {
-      throw new IllegalArgumentException("filters cannot be or-ed");
-    }
-
-    StableBloomFilter cbf = (StableBloomFilter)filter;
-
-      int sizeInWords = CountingBloomFilter.buckets2words(vectorSize);
-    for(int i = 0; i < sizeInWords; i++) {
-      this.buckets[i] |= cbf.buckets[i];
-    }
-  }
-
-  @Override
-  public void xor(Filter filter) {
-    throw new UnsupportedOperationException("xor() is undefined for "
-        + this.getClass().getName());
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder res = new StringBuilder();
-
-    for(int i = 0; i < vectorSize; i++) {
-      if(i > 0) {
-        res.append(" ");
-      }
-
-      int wordNum = i >> 4;          // div 16
-      int bucketShift = (i & 0x0f) << 2;  // (mod 16) * 4
-
-      long bucketMask = 15L << bucketShift;
-      long bucketValue = (buckets[wordNum] & bucketMask) >>> bucketShift;
-
-      res.append(bucketValue);
-    }
-
-    return res.toString();
   }
 }
