@@ -23,9 +23,7 @@ public class CountingBloomFilterTest {
     }
 
 
-    private static final Random RANDOM = new Random();
     private static final int LARGE_VECTOR_SIZE = 2 << 29;
-    private static final int NBHASH = 5;
 
     @Test
     public void testDoesNotUseMoreThanOneGigabyteOfMemory() {
@@ -40,30 +38,5 @@ public class CountingBloomFilterTest {
         System.out.println("items = " + LARGE_VECTOR_SIZE);
         assertEquals(expectedMemorySize, bytesForCBF);
         assertTrue(bytesForCBF < /* 1 GiB */ (1048576L * 1024));
-    }
-
-    @Test
-    public void testManyItems() {
-        final CountingBloomFilter cbf = new CountingBloomFilter(LARGE_VECTOR_SIZE, NBHASH, Hash.MURMUR_HASH);
-        final List<String> services = new ArrayList<String>();
-        services.add("Twitter");
-        services.add("Twitter");
-        services.add("Facebook");
-        services.add("Facebook");
-        services.add("Facebook");
-
-        long count = LARGE_VECTOR_SIZE;
-        while (count > 0) {
-            count -= 1;
-            if (((LARGE_VECTOR_SIZE - count) % 250000) == 0) System.out.println("count = " + count);
-
-            long serviceId = RANDOM.nextLong();
-            while (serviceId < 0) serviceId = RANDOM.nextLong();
-            String serviceName = services.get(RANDOM.nextInt(services.size()));
-
-            final Key key = new Key((serviceName + serviceId).getBytes(UTF8));
-            cbf.add(key);
-            assertTrue(cbf.membershipTest(key));
-        }
     }
 }
